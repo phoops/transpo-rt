@@ -107,10 +107,8 @@ fn create_monitored_stop_visit(
     model::MonitoredStopVisit {
         monitoring_ref: stop.id.clone(),
         monitored_vehicle_journey: model::MonitoredVehicleJourney {
-            line_ref,
             service_info: model::ServiceInfoGroup { operator_ref },
             journey_pattern_ref: None,
-            monitored_call: Some(call),
         },
         recorded_at_time: update_time,
         item_identifier: format!("{}:{}", &stop.id, &vj.id),

@@ -48,23 +48,19 @@ impl OpenapiSchema for DateTime {
 ///
 /// Note: it is referenced as `xxxDelivery` in the siri specifications
 #[derive(Serialize, Deserialize, OpenapiSchema, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub struct CommonDelivery {
-    pub version: String,
     pub response_time_stamp: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// Id of the query
-    pub request_message_ref: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<bool>,
+    pub request_message_ref: Option<String>
 }
 
 impl Default for CommonDelivery {
     fn default() -> Self {
         CommonDelivery {
-            version: "2.0".to_string(),
             response_time_stamp: chrono::Utc::now().to_rfc3339(),
             // error_condition: None,
-            status: Some(true),
             request_message_ref: None,
         }
     }

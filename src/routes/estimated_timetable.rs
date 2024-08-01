@@ -76,7 +76,7 @@ fn create_estimated_timetable_visit(
     data: &Dataset,
     connection: &Connection,
     updated_connection: Option<&RealTimeConnection>,
-) -> siri_lite::service_delivery::EstimatedTimetableVisit {
+) -> siri_lite::service_delivery::EstimatedVehicleJourney {
     let stop = &data.ntm.stop_points[connection.stop_point_idx];
     let vj = &data.ntm.vehicle_journeys[connection.dated_vj.vj_idx];
     let route = &data.ntm.routes.get(&vj.route_id);
@@ -95,12 +95,11 @@ fn create_estimated_timetable_visit(
         // if we have no realtime data, we consider the update time to be the time of the base schedule loading
         // (it's not that great, but we don't have something better)
         .unwrap_or_else(|| data.loaded_at);
-    let call = model::MonitoredCall {
+    let call = model::EstimatedCall {
+        StopPointRef: format!("IT:ITC1:ScheduledStopPoint:busATS:{}", stop.id.clone()), //TODO: hardcoded prefix
+        visit_number: None, //TODO: find value
         order: connection.sequence as u16,
         stop_point_name: stop.name.clone(),
-        vehicle_at_stop: None,
-        destination_display: None,
-        arrival_status: None,
         aimed_arrival_time: Some(siri_lite::DateTime(connection.arr_time)),
         aimed_departure_time: Some(siri_lite::DateTime(connection.dep_time)),
         expected_arrival_time: updated_connection
@@ -111,16 +110,16 @@ fn create_estimated_timetable_visit(
             .map(siri_lite::DateTime),
     };
 
-    model::EstimatedTimetableVisit {
-        monitoring_ref: stop.id.clone(),
-        monitored_vehicle_journey: model::MonitoredVehicleJourney {
-            line_ref,
-            service_info: model::ServiceInfoGroup { operator_ref },
-            journey_pattern_ref: None,
-            monitored_call: Some(call),
-        },
-        recorded_at_time: update_time,
-        item_identifier: format!("{}:{}", &stop.id, &vj.id),
+    model::EstimatedVehicleJourney {
+            line_ref: format!("IT:ITC1:Line:busATS:{}", line_ref.clone()), //TODO: hardcoded prefix
+            direction_ref: None, //TODO: find value
+            journey_pattern_ref: None, //TODO: find value
+            published_line_name: None, //TODO: find value
+            operator_ref: model::ServiceInfoGroup { 
+                operator_ref: Some(format!("IT:ITC1:Operator:12345678911:busATS:{}", operator_ref.unwrap_or_default())) 
+            }, //TODO: hardcoded prefix
+            veichle_ref: None, //TODO: find value
+            estimated_calls: vec![call]
     }
 }
 
@@ -208,14 +207,17 @@ fn create_estimated_timetable(
             )
         })
         .take(request.maximum_stop_visits as usize)
-        .collect();
+        .collect::<Vec<model::EstimatedVehicleJourney>>();
 
     vec![model::EstimatedTimetableDelivery {
-        version: "2.0".to_owned(),
-        response_time_stamp: chrono::Local::now().to_rfc3339(),
+        response_time_stamp: chrono::Local::now().to_rfc3339(), //TODO: is this value correct?
         request_message_ref: None,
-        status: true,
-        monitored_estimated_timetable: estimated_timetable,
+        subscriber_ref: "NAP".to_string(), //TODO: hardcoded value
+        subscription_ref: "0001".to_string(), //TODO: hardcoded value
+        estimated_journey_version_frame: model::EstimatedJourneyVersionFrame {
+            recorded_at_time: chrono::Local::now().to_rfc3339(), //TODO: is this value correct?
+            estimated_vehicle_journey: estimated_timetable,
+        },
     }]
 }
 
@@ -254,13 +256,14 @@ fn estimated_timetable(
     Ok(siri_lite::SiriResponse {
         siri: siri_lite::Siri {
             service_delivery: Some(model::ServiceDelivery {
-                producer_ref: None, // TODO take the id of the dataset ?
+                producer_ref: Some("RAP_Toscana".to_string()), // TODO: hardcoded value
                 estimated_timetable_delivery: create_estimated_timetable(
                     stop_idx,
                     &data,
                     updated_timetable,
                     &request,
                 ),
+                response_message_identifier:  Some("0001".to_string()),   //TODO: hardcoded prefix
                 ..Default::default()
             }),
             ..Default::default()

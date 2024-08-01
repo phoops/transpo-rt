@@ -43,6 +43,48 @@ pub struct MonitoredCall {
     pub arrival_status: Option<ArrivalStatus>,
 }
 
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+#[serde(rename_all = "PascalCase")]
+pub struct EstimatedVehicleJourney {
+    pub line_ref: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub direction_ref: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub journey_pattern_ref: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub published_line_name: Option<String>,
+    #[serde(flatten)]
+    pub operator_ref: ServiceInfoGroup,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub veichle_ref: Option<String>,
+    /// Id of the journey pattern
+    pub estimated_calls: Vec<EstimatedCall>,
+}
+
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+#[serde(rename_all = "PascalCase")]
+pub struct EstimatedCall {
+    pub StopPointRef: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub visit_number: Option<String>,
+    pub order: u16,
+    pub stop_point_name: String,
+    /// Scheduled arrival time
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aimed_arrival_time: Option<DateTime>,
+    /// Scheduled departure time
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aimed_departure_time: Option<DateTime>,
+    /// Estimated arrival time
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_arrival_time: Option<DateTime>,
+    /// Estimated departure time
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_departure_time: Option<DateTime>,
+}
+
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct ServiceInfoGroup {
@@ -59,14 +101,11 @@ pub struct ServiceInfoGroup {
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct MonitoredVehicleJourney {
-    /// Id of the line
-    pub line_ref: String,
     #[serde(flatten)]
     pub service_info: ServiceInfoGroup,
     /// Id of the journey pattern
     #[serde(skip_serializing_if = "Option::is_none")]
     pub journey_pattern_ref: Option<String>,
-    pub monitored_call: Option<MonitoredCall>,
     // pub onward_calls: Option<OnwardCall>,
 }
 
@@ -85,13 +124,9 @@ pub struct MonitoredStopVisit {
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct EstimatedTimetableVisit {
-    /// Id of the stop point
-    pub monitoring_ref: String,
-    /// Datetime of the information update
-    pub recorded_at_time: chrono::DateTime<chrono::Utc>,
     /// Id of the couple Stop / VehicleJourney
-    pub item_identifier: String,
-    pub monitored_vehicle_journey: MonitoredVehicleJourney,
+    //pub item_identifier: String,
+    pub monitored_vehicle_journey: EstimatedVehicleJourney,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
@@ -112,16 +147,21 @@ pub struct StopMonitoringDelivery {
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct EstimatedTimetableDelivery {
-    /// Version of the siri's response
-    pub version: String,
     /// Datetime of the response's production
     pub response_time_stamp: String,
     /// Id of the query
     #[serde(skip_serializing_if = "Option::is_none")]
     pub request_message_ref: Option<String>, // Note: this is mandatory for idf profil
-    /// Status of the response, true if the response has been correctly treated, false otherwise
-    pub status: bool,
-    pub monitored_estimated_timetable: Vec<EstimatedTimetableVisit>,
+    pub subscriber_ref: String,
+    pub subscription_ref: String,
+    pub estimated_journey_version_frame: EstimatedJourneyVersionFrame,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+#[serde(rename_all = "PascalCase")]
+pub struct EstimatedJourneyVersionFrame {
+    pub recorded_at_time: String,
+    pub estimated_vehicle_journey: Vec<EstimatedVehicleJourney>,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
