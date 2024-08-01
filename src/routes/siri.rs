@@ -15,6 +15,7 @@ pub async fn siri_endpoint(
             "stop-monitoring" => Link::from_scoped_url(&req, "stop_monitoring_query", dataset_id),
             "stoppoints-discovery" => Link::from_scoped_url(&req, "stoppoints_discovery_query", dataset_id),
             "general-message" => Link::from_scoped_url(&req, "general_message_query", dataset_id),
+            "estimated-timetable" => Link::from_scoped_url(&req, "estimated_timetable_query", dataset_id),
         }
         .into(),
     ))

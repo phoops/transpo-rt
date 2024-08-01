@@ -84,6 +84,18 @@ pub struct MonitoredStopVisit {
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
+pub struct EstimatedTimetableVisit {
+    /// Id of the stop point
+    pub monitoring_ref: String,
+    /// Datetime of the information update
+    pub recorded_at_time: chrono::DateTime<chrono::Utc>,
+    /// Id of the couple Stop / VehicleJourney
+    pub item_identifier: String,
+    pub monitored_vehicle_journey: MonitoredVehicleJourney,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+#[serde(rename_all = "PascalCase")]
 pub struct StopMonitoringDelivery {
     /// Version of the siri's response
     pub version: String,
@@ -95,6 +107,21 @@ pub struct StopMonitoringDelivery {
     /// Status of the response, true if the response has been correctly treated, false otherwise
     pub status: bool,
     pub monitored_stop_visit: Vec<MonitoredStopVisit>,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+#[serde(rename_all = "PascalCase")]
+pub struct EstimatedTimetableDelivery {
+    /// Version of the siri's response
+    pub version: String,
+    /// Datetime of the response's production
+    pub response_time_stamp: String,
+    /// Id of the query
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub request_message_ref: Option<String>, // Note: this is mandatory for idf profil
+    /// Status of the response, true if the response has been correctly treated, false otherwise
+    pub status: bool,
+    pub monitored_estimated_timetable: Vec<EstimatedTimetableVisit>,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
@@ -113,6 +140,8 @@ pub struct ServiceDelivery {
     pub response_message_identifier: Option<String>, // Note: this is mandatory for idf profil
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub stop_monitoring_delivery: Vec<StopMonitoringDelivery>,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub estimated_timetable_delivery: Vec<EstimatedTimetableDelivery>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub general_message_delivery: Vec<GeneralMessageDelivery>,
 }

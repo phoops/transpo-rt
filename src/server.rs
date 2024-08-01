@@ -3,7 +3,7 @@ use crate::datasets;
 use crate::datasets::{Dataset, DatasetInfo, Datasets, Period};
 use crate::routes::{
     documentation, entry_point, general_message_query, gtfs_rt_json, gtfs_rt_protobuf,
-    siri_endpoint, status_query, stop_monitoring_query, stoppoints_discovery_query,
+    siri_endpoint, status_query, stop_monitoring_query, estimated_timetable_query, stoppoints_discovery_query,
 };
 use actix::{Actor, Addr};
 use actix_web::web;
@@ -124,6 +124,11 @@ fn register_dataset_routes(
                     web::resource("/siri/2.0/stop-monitoring.json/")
                         .name(&format!("{}/stop_monitoring_query", &d.id))
                         .route(web::get().to(stop_monitoring_query)),
+                )
+                .service(
+                    web::resource("/siri/2.0/estimated-timetable.json/")
+                        .name(&format!("{}/estimated_timetable_query", &d.id))
+                        .route(web::get().to(estimated_timetable_query)),
                 )
                 .service(
                     web::resource("/siri/2.0/general-message.json/")
