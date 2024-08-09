@@ -1,3 +1,5 @@
+use std::u64;
+
 use super::open_api::make_param;
 use crate::datasets::{Connection, Dataset, RealTimeConnection, UpdatedTimetable};
 use crate::extractors::RealTimeDatasetWrapper;
@@ -21,8 +23,12 @@ impl Default for DataFreshness {
     }
 }
 
-fn default_stop_visits() -> u8 {
-    20
+fn default_stop_visits() -> u64 {
+    u64::MAX
+}
+
+fn default_only_realtime() -> bool {
+    true
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,7 +38,8 @@ pub struct Params {
     /// Id of the stop_point on which we want the next departures
     monitoring_ref: Option<String>,
     /// Filter only realtime data
-    only_realtime: Option<bool>,
+    #[serde(default = "default_only_realtime")]
+    only_realtime: bool,
     /// Filter the departures of the given OperatorRef
     operator_ref: Option<String>,
     /// Filter the departures of the given line's id
@@ -49,11 +56,8 @@ pub struct Params {
     /// the data_freshness is used to control whether we want realtime data or only base schedule data
     #[serde(default = "DataFreshness::default")]
     data_freshness: DataFreshness,
-    /// Maximum number of departures to display
-    /// Maximum value is arbitrary 20
-    /// Default is arbitrary 2 (contrary to the spec, but we don't want it to be unlimited by default)
     #[serde(default = "default_stop_visits")]
-    maximum_stop_visits: u8,
+    maximum_stop_visits: u64,
 }
 
 impl Params {
@@ -190,7 +194,7 @@ fn create_estimated_timetable(
                 .get(i)
                 .map(|_c| _c.arr_time.is_some() || _c.dep_time.is_some())
                 .unwrap_or(false);
-            if request.only_realtime.unwrap_or(false) {
+            if request.only_realtime {
                 has_realtime_data
             } else {
                 true
@@ -237,6 +241,9 @@ fn estimated_timetable(
     let updated_timetable = &rt_dataset_wrapper.updated_timetable;
 
     validate_params(&mut request)?;
+
+    // TODO: hardcoded agency, remove when not necessary
+    request.operator_ref = Some("1".to_string());
 
     // set stop_idx to a default value
     let mut stop_idx = None;
