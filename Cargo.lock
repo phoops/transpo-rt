@@ -1851,7 +1851,7 @@ checksum = "c0a5296bf9d0ac9e4a6e4cb844e3ee84bf33f841c7b3ae2cc87f05ceb81b50ae"
 dependencies = [
  "failure",
  "failure_derive",
- "quick-xml",
+ "quick-xml 0.12.4",
 ]
 
 [[package]]
@@ -2437,6 +2437,16 @@ dependencies = [
  "failure",
  "log",
  "memchr",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0452695941410a58c8ce4391707ba9bad26a247173bd9886a05a5e8a8babec75"
+dependencies = [
+ "memchr",
+ "serde",
 ]
 
 [[package]]
@@ -3949,6 +3959,7 @@ dependencies = [
  "prost 0.6.1",
  "prost-build",
  "prost-derive 0.6.1",
+ "quick-xml 0.21.0",
  "reqwest 0.10.10",
  "rustic_hal",
  "sentry",

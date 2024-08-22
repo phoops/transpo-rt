@@ -120,6 +120,8 @@ fn general_message(
     request: Params,
     rt_dataset_wrapper: RealTimeDatasetWrapper,
 ) -> Result<SiriResponse> {
+    unimplemented!()
+    /*
     let timezone = rt_dataset_wrapper.get_base_schedule_dataset()?.timezone;
 
     let requested_dt = request
@@ -156,6 +158,7 @@ fn general_message(
             ..Default::default()
         },
     })
+     */
 }
 
 pub async fn general_message_query(

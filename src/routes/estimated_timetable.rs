@@ -6,10 +6,11 @@ use crate::extractors::RealTimeDatasetWrapper;
 use crate::routes::estimated_timetable;
 use crate::siri_lite::{self, service_delivery as model, SiriResponse};
 use crate::utils;
-use actix_web::{error, web};
+use actix_web::{error, web, HttpResponse};
 use openapi_schema::OpenapiSchema;
 use transit_model::collection::Idx;
 use transit_model::objects::StopPoint;
+use quick_xml::se::to_string;
 
 #[derive(Debug, Deserialize, PartialEq, Eq, OpenapiSchema)]
 enum DataFreshness {
@@ -100,30 +101,36 @@ fn create_estimated_timetable_visit(
         // (it's not that great, but we don't have something better)
         .unwrap_or_else(|| data.loaded_at);
     let call = model::EstimatedCall {
-        StopPointRef: format!("IT:ITC1:ScheduledStopPoint:busATS:{}", stop.id.clone()), //TODO: hardcoded prefix
-        visit_number: None, //TODO: find value
-        order: connection.sequence as u16,
-        stop_point_name: stop.name.clone(),
-        aimed_arrival_time: Some(siri_lite::DateTime(connection.arr_time)),
-        aimed_departure_time: Some(siri_lite::DateTime(connection.dep_time)),
-        expected_arrival_time: updated_connection
-            .and_then(|c| c.arr_time)
-            .map(siri_lite::DateTime),
-        expected_departure_time: updated_connection
+        StopPointRef: model::StopPointRefWrapper{ StopPointRef: format!("IT:ITC1:ScheduledStopPoint:busATS:{}", stop.id.clone())}, //TODO: hardcoded prefix
+        VisitNumber: None, //TODO: find value
+        Order: model::OrderWrapper{ Order: connection.sequence as u16},
+        StopPointName: model::StopPointNameWrapper{ StopPointName: stop.name.clone()},
+        AimedArrivalTime: Some( model::AimedArrivalTimeWrapper{ AimedArrivalTime: siri_lite::DateTime(connection.arr_time)}),
+        AimedDepartureTime: Some( model::AimedDepartureTimeWrapper{ AimedDepartureTime: siri_lite::DateTime(connection.dep_time)}),
+        ExpectedDepartureTime: updated_connection
             .and_then(|c| c.dep_time)
-            .map(siri_lite::DateTime),
+            .map(|time| model::ExpectedDepartureTimeWrapper { ExpectedDepartureTime: siri_lite::DateTime(time) })
+            .or_else(|| Some(model::ExpectedDepartureTimeWrapper { ExpectedDepartureTime: siri_lite::DateTime(chrono::Utc::now().naive_local()) })),
+        ExpectedArrivalTime: updated_connection
+            .and_then(|c| c.arr_time)
+            .map(|time| model::ExpectedArrivalTimeWrapper { ExpectedArrivalTime: siri_lite::DateTime(time) })
+            .or_else(|| Some(model::ExpectedArrivalTimeWrapper { ExpectedArrivalTime: siri_lite::DateTime(chrono::Utc::now().naive_local()) })),
     };
 
     model::EstimatedVehicleJourney {
-            line_ref: format!("IT:ITC1:Line:busATS:{}", line_ref.clone()), //TODO: hardcoded prefix
-            direction_ref: None, //TODO: find value
-            journey_pattern_ref: None, //TODO: find value
-            published_line_name: None, //TODO: find value
-            operator_ref: model::ServiceInfoGroup { 
-                operator_ref: Some(format!("IT:ITC1:Operator:12345678911:busATS:{}", operator_ref.unwrap_or_default())) 
+            LineRef: model::LineRefWrapper{ LineRef: format!("IT:ITC1:Line:busATS:{}", line_ref.clone())}, //TODO: hardcoded prefix
+            DirectionRef: Some(model::DirectionRefWrapper{ DirectionRef: "inbound".to_string()}), //TODO: find value
+            JourneyPatternRef: None, //TODO: find value
+            PublishedLineName: None, //TODO: find value
+            FramedVehicleJourneyRef: model::FramedVehicleJourneyRef {
+                DataFrameRef: Some(model::DataFrameRefWrapper{ DataFrameRef: "xxx".to_string()}), //TODO: hardcoded value
+                DatedVehicleJourneyRef: Some(model::DatedVehicleJourneyRefWrapper{ DatedVehicleJourneyRef: format!("xxx")}), //TODO: hardcoded prefix
+            },
+            OperatorRef: model::ServiceInfoGroup { 
+                OperatorRef: Some(model::OperatorRefWrapper{ OperatorRef: format!("IT:ITC1:Operator:12345678911:busATS:{}", operator_ref.unwrap_or_default())}) 
             }, //TODO: hardcoded prefix
-            veichle_ref: None, //TODO: find value
-            estimated_calls: vec![call]
+            VehicleRef: None, //TODO: find value
+            EstimatedCalls: call,
     }
 }
 
@@ -214,13 +221,13 @@ fn create_estimated_timetable(
         .collect::<Vec<model::EstimatedVehicleJourney>>();
 
     vec![model::EstimatedTimetableDelivery {
-        response_time_stamp: chrono::Local::now().to_rfc3339(), //TODO: is this value correct?
-        request_message_ref: None,
-        subscriber_ref: "NAP".to_string(), //TODO: hardcoded value
-        subscription_ref: "0001".to_string(), //TODO: hardcoded value
-        estimated_journey_version_frame: model::EstimatedJourneyVersionFrame {
-            recorded_at_time: chrono::Local::now().to_rfc3339(), //TODO: is this value correct?
-            estimated_vehicle_journey: estimated_timetable,
+        ResponseTimestamp: model::ResponseTimeStampWrapper{ResponseTimestamp: chrono::Local::now().to_rfc3339()}, //TODO: is this value correct?
+        RequestMessageRef: None,
+        SubscriberRef: model::SubscriberRefWrapper{ SubscriberRef: "NAP".to_string()}, //TODO: hardcoded value
+        SubscriptionRef: model::SubscriptionRefWrapper{ SubscriptionRef: "0001".to_string()}, //TODO: hardcoded value
+        EstimatedJourneyVersionFrame: model::EstimatedJourneyVersionFrame {
+            RecordedAtTime: model::RecordedAtTimeWrapper{ RecordedAtTime: chrono::Local::now().to_rfc3339()}, //TODO: is this value correct?
+            EstimatedVehicleJourney: estimated_timetable,
         },
     }]
 }
@@ -235,7 +242,7 @@ fn validate_params(request: &mut Params) -> actix_web::Result<()> {
 fn estimated_timetable(
     mut request: Params,
     rt_dataset_wrapper: RealTimeDatasetWrapper,
-) -> actix_web::Result<siri_lite::SiriResponse> {
+) -> actix_web::Result<String> {
     let data = rt_dataset_wrapper.get_base_schedule_dataset()?;
 
     let updated_timetable = &rt_dataset_wrapper.updated_timetable;
@@ -260,27 +267,35 @@ fn estimated_timetable(
             })?);
     }
 
-    Ok(siri_lite::SiriResponse {
-        siri: siri_lite::Siri {
-            service_delivery: Some(model::ServiceDelivery {
-                producer_ref: Some("RAP_Toscana".to_string()), // TODO: hardcoded value
-                estimated_timetable_delivery: create_estimated_timetable(
-                    stop_idx,
-                    &data,
-                    updated_timetable,
-                    &request,
-                ),
-                response_message_identifier:  Some("0001".to_string()),   //TODO: hardcoded prefix
-                ..Default::default()
-            }),
-            ..Default::default()
-        },
-    })
+    let service_delivery = Some(model::ServiceDelivery {
+        ProducerRef: Some(model::ProducerRefWrapper{ ProducerRef: "RAP_Toscana".to_string()}), // TODO: hardcoded value
+        EstimatedTimetableDelivery: create_estimated_timetable(
+            stop_idx,
+            &data,
+            updated_timetable,
+            &request,
+        ),
+        ResponseMessageIdentifier:  Some(model::ResponseMessageIdentifierWrapper{ ResponseMessageIdentifier: "0001".to_string()}),   //TODO: hardcoded prefix
+        ResponseTimestamp: model::ResponseTimeStampWrapper{ ResponseTimestamp: chrono::Utc::now().to_rfc3339()},
+        ..Default::default()
+    });
+
+    let service_delivery_xml = to_string(&service_delivery).unwrap();
+    //TODO: FIX THIS replace
+    let service_delivery_xml2 = service_delivery_xml.replace("<EstimatedCalls>", "<EstimatedCalls><EstimatedCall>").replace("</EstimatedCalls>", "</EstimatedCall></EstimatedCalls>");
+    let xml_with_root = format!("<?xml version=\"1.0\" encoding=\"utf-8\"?><Siri xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.siri.org.uk/siri\" xsi:schemaLocation=\"http://www.siri.org.uk/siri ../xsd/siri.xsd\" version=\"2.1\"><ServiceDelivery>{}</ServiceDelivery></Siri>", service_delivery_xml2);
+
+    Ok(xml_with_root)
+
 }
 
 pub async fn estimated_timetable_query(
     web::Query(query): web::Query<Params>,
     rt_dataset_wrapper: RealTimeDatasetWrapper,
-) -> actix_web::Result<web::Json<SiriResponse>> {
-    Ok(web::Json(estimated_timetable(query, rt_dataset_wrapper)?))
+) -> HttpResponse {
+    let xml_string = estimated_timetable(query, rt_dataset_wrapper);
+    let xml_string = xml_string.unwrap_or_default();
+    HttpResponse::Ok()
+        .content_type(actix_web::http::header::HeaderValue::from_static("text/plain"))
+        .body(xml_string)
 }

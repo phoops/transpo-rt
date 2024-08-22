@@ -70,6 +70,8 @@ fn create_monitored_stop_visit(
     connection: &Connection,
     updated_connection: Option<&RealTimeConnection>,
 ) -> siri_lite::service_delivery::MonitoredStopVisit {
+    unimplemented!()
+    /*
     let stop = &data.ntm.stop_points[connection.stop_point_idx];
     let vj = &data.ntm.vehicle_journeys[connection.dated_vj.vj_idx];
     let route = &data.ntm.routes.get(&vj.route_id);
@@ -113,6 +115,8 @@ fn create_monitored_stop_visit(
         recorded_at_time: update_time,
         item_identifier: format!("{}:{}", &stop.id, &vj.id),
     }
+    */
+
 }
 
 fn get_line_ref<'a>(cnx: &Connection, model: &'a transit_model::Model) -> Option<&'a str> {
@@ -140,6 +144,8 @@ fn create_stop_monitoring(
     updated_timetable: &UpdatedTimetable,
     request: &Params,
 ) -> Vec<model::StopMonitoringDelivery> {
+    unimplemented!()
+    /*
     // if we want to datetime in the query, we get the current_time (in the timezone of the dataset)
     let requested_start_time = request.start_time.as_ref().map(|d| d.0).unwrap_or_else(|| {
         chrono::Utc::now()
@@ -179,6 +185,7 @@ fn create_stop_monitoring(
         status: true,
         monitored_stop_visit: stop_visit,
     }]
+    */
 }
 
 fn validate_params(request: &mut Params) -> actix_web::Result<()> {
@@ -191,6 +198,8 @@ fn stop_monitoring(
     mut request: Params,
     rt_dataset_wrapper: RealTimeDatasetWrapper,
 ) -> actix_web::Result<siri_lite::SiriResponse> {
+    unimplemented!()
+    /*
     let data = rt_dataset_wrapper.get_base_schedule_dataset()?;
 
     let updated_timetable = &rt_dataset_wrapper.updated_timetable;
@@ -223,6 +232,7 @@ fn stop_monitoring(
             ..Default::default()
         },
     })
+     */
 }
 
 pub async fn stop_monitoring_query(

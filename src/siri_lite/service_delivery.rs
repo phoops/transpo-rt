@@ -1,5 +1,6 @@
 use crate::siri_lite::general_message::GeneralMessageDelivery;
 use crate::siri_lite::DateTime;
+use serde::{Serialize, Deserialize};
 use openapi_schema::OpenapiSchema;
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
@@ -18,71 +19,104 @@ pub enum ArrivalStatus {
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct MonitoredCall {
-    pub order: u16,
-    pub stop_point_name: String,
-    /// true if the vehicle is at the stop
+    #[serde(flatten)]
+    pub Order: OrderWrapper,
+    
+    #[serde(flatten)]
+    pub StopPointName: StopPointNameWrapper,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub vehicle_at_stop: Option<bool>,
-    /// Destination on the headsign of the vehicle
+    #[serde(flatten)]
+    pub VehicleAtStop: Option<VehicleAtStopWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub destination_display: Option<String>,
-    /// Scheduled arrival time
+    #[serde(flatten)]
+    pub DestinationDisplay: Option<DestinationDisplayWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub aimed_arrival_time: Option<DateTime>,
-    /// Scheduled departure time
+    #[serde(flatten)]
+    pub AimedArrivalTime: Option<AimedArrivalTimeWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub aimed_departure_time: Option<DateTime>,
-    /// Estimated arrival time
+    #[serde(flatten)]
+    pub AimedDepartureTime: Option<AimedDepartureTimeWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub expected_arrival_time: Option<DateTime>,
-    /// Estimated departure time
+    #[serde(flatten)]
+    pub ExpectedArrivalTime: Option<ExpectedArrivalTimeWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub expected_departure_time: Option<DateTime>,
-    /// Status on the arrival at the stop
+    #[serde(flatten)]
+    pub ExpectedDepartureTime: Option<ExpectedDepartureTimeWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub arrival_status: Option<ArrivalStatus>,
+    #[serde(flatten)]
+    pub ArrivalStatus: Option<ArrivalStatusWrapper>,
 }
 
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct EstimatedVehicleJourney {
-    pub line_ref: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub direction_ref: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub journey_pattern_ref: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub published_line_name: Option<String>,
     #[serde(flatten)]
-    pub operator_ref: ServiceInfoGroup,
+    pub LineRef: LineRefWrapper,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub veichle_ref: Option<String>,
-    /// Id of the journey pattern
-    pub estimated_calls: Vec<EstimatedCall>,
+    #[serde(flatten)]
+    pub DirectionRef: Option<DirectionRefWrapper>,
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(flatten)]
+    pub JourneyPatternRef: Option<JourneyPatternRefWrapper>,
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(flatten)]
+    pub PublishedLineName: Option<PublishedLineNameWrapper>,
+
+    pub FramedVehicleJourneyRef: FramedVehicleJourneyRef,
+    
+    #[serde(flatten)]
+    pub OperatorRef: ServiceInfoGroup,
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(flatten)]
+    pub VehicleRef: Option<VehicleRefWrapper>,
+    
+    pub EstimatedCalls: EstimatedCall,
 }
 
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct EstimatedCall {
-    pub StopPointRef: String,
+    #[serde(flatten)]
+    pub StopPointRef: StopPointRefWrapper,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub visit_number: Option<String>,
-    pub order: u16,
-    pub stop_point_name: String,
-    /// Scheduled arrival time
+    #[serde(flatten)]
+    pub VisitNumber: Option<VisitNumberWrapper>,
+    
+    #[serde(flatten)]
+    pub Order: OrderWrapper,
+    
+    #[serde(flatten)]
+    pub StopPointName: StopPointNameWrapper,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub aimed_arrival_time: Option<DateTime>,
-    /// Scheduled departure time
+    #[serde(flatten)]
+    pub AimedArrivalTime: Option<AimedArrivalTimeWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub aimed_departure_time: Option<DateTime>,
-    /// Estimated arrival time
+    #[serde(flatten)]
+    pub AimedDepartureTime: Option<AimedDepartureTimeWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub expected_arrival_time: Option<DateTime>,
-    /// Estimated departure time
+    #[serde(flatten)]
+    pub ExpectedDepartureTime: Option<ExpectedDepartureTimeWrapper>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub expected_departure_time: Option<DateTime>,
+    #[serde(flatten)]
+    pub ExpectedArrivalTime: Option<ExpectedArrivalTimeWrapper>,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
@@ -90,7 +124,8 @@ pub struct EstimatedCall {
 pub struct ServiceInfoGroup {
     /// Id of the operator
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub operator_ref: Option<String>,
+    #[serde(flatten)]
+    pub OperatorRef: Option<OperatorRefWrapper>,
     /* TODO find the right documentation for the type of this
     /// Specific features available in the vehicle
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -102,23 +137,26 @@ pub struct ServiceInfoGroup {
 #[serde(rename_all = "PascalCase")]
 pub struct MonitoredVehicleJourney {
     #[serde(flatten)]
-    pub service_info: ServiceInfoGroup,
-    /// Id of the journey pattern
+    pub ServiceInfo: ServiceInfoGroup,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub journey_pattern_ref: Option<String>,
-    // pub onward_calls: Option<OnwardCall>,
+    #[serde(flatten)]
+    pub JourneyPatternRef: Option<JourneyPatternRefWrapper>,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct MonitoredStopVisit {
-    /// Id of the stop point
-    pub monitoring_ref: String,
-    /// Datetime of the information update
-    pub recorded_at_time: chrono::DateTime<chrono::Utc>,
-    /// Id of the couple Stop / VehicleJourney
-    pub item_identifier: String,
-    pub monitored_vehicle_journey: MonitoredVehicleJourney,
+    #[serde(flatten)]
+    pub MonitoringRef: MonitoringRefWrapper,
+    
+    #[serde(flatten)]
+    pub RecordedAtTime: RecordedAtTimeWrapper,
+    
+    #[serde(flatten)]
+    pub ItemIdentifier: ItemIdentifierWrapper,
+    
+    pub MonitoredVehicleJourney: MonitoredVehicleJourney,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
@@ -126,62 +164,249 @@ pub struct MonitoredStopVisit {
 pub struct EstimatedTimetableVisit {
     /// Id of the couple Stop / VehicleJourney
     //pub item_identifier: String,
-    pub monitored_vehicle_journey: EstimatedVehicleJourney,
+    pub MonitoredVehicleJourney: EstimatedVehicleJourney,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
 #[serde(rename_all = "PascalCase")]
 pub struct StopMonitoringDelivery {
-    /// Version of the siri's response
-    pub version: String,
-    /// Datetime of the response's production
-    pub response_time_stamp: String,
-    /// Id of the query
+    #[serde(flatten)]
+    pub Version: VersionWrapper,
+    
+    #[serde(flatten)]
+    pub ResponseTimestamp: ResponseTimeStampWrapper,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub request_message_ref: Option<String>, // Note: this is mandatory for idf profil
-    /// Status of the response, true if the response has been correctly treated, false otherwise
-    pub status: bool,
-    pub monitored_stop_visit: Vec<MonitoredStopVisit>,
+    #[serde(flatten)]
+    pub RequestMessageRef: Option<RequestMessageRefWrapper>,
+    
+    #[serde(flatten)]
+    pub Status: StatusWrapper,
+    
+    pub MonitoredStopVisit: Vec<MonitoredStopVisit>,
 }
 
-#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct EstimatedTimetableDelivery {
-    /// Datetime of the response's production
-    pub response_time_stamp: String,
-    /// Id of the query
+     #[serde(flatten)]
+    pub ResponseTimestamp: ResponseTimeStampWrapper,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub request_message_ref: Option<String>, // Note: this is mandatory for idf profil
-    pub subscriber_ref: String,
-    pub subscription_ref: String,
-    pub estimated_journey_version_frame: EstimatedJourneyVersionFrame,
+    #[serde(flatten)]
+    pub RequestMessageRef: Option<RequestMessageRefWrapper>, // Note: this is mandatory for idf profil
+
+    #[serde(flatten)]
+    pub SubscriberRef: SubscriberRefWrapper,
+
+    #[serde(flatten)]
+    pub SubscriptionRef: SubscriptionRefWrapper,
+
+    pub EstimatedJourneyVersionFrame: EstimatedJourneyVersionFrame,
 }
 
-#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct EstimatedJourneyVersionFrame {
-    pub recorded_at_time: String,
-    pub estimated_vehicle_journey: Vec<EstimatedVehicleJourney>,
+    #[serde(flatten)]
+    pub RecordedAtTime: RecordedAtTimeWrapper,
+    
+    pub EstimatedVehicleJourney: Vec<EstimatedVehicleJourney>,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
 #[serde(rename_all = "PascalCase")]
 pub struct ServiceDelivery {
     #[serde(flatten)]
-    pub common: crate::siri_lite::shared::CommonDelivery,
-    /// Id of the producer
+   pub ResponseTimestamp: ResponseTimeStampWrapper,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub producer_ref: Option<String>,
-    /// Address of the service
+    #[serde(flatten)]
+    pub ProducerRef: Option<ProducerRefWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub address: Option<String>,
-    /// Id of the response
+    #[serde(flatten)]
+    pub Address: Option<AddressWrapper>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub response_message_identifier: Option<String>, // Note: this is mandatory for idf profil
+    #[serde(flatten)]
+    pub ResponseMessageIdentifier: Option<ResponseMessageIdentifierWrapper>,
+    
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub stop_monitoring_delivery: Vec<StopMonitoringDelivery>,
+    pub StopMonitoringDelivery: Vec<StopMonitoringDelivery>,
+    
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub estimated_timetable_delivery: Vec<EstimatedTimetableDelivery>,
+    pub EstimatedTimetableDelivery: Vec<EstimatedTimetableDelivery>,
+    
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub general_message_delivery: Vec<GeneralMessageDelivery>,
+    pub GeneralMessageDelivery: Vec<GeneralMessageDelivery>,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+#[serde(rename_all = "PascalCase")]
+pub struct FramedVehicleJourneyRef {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(flatten)]
+    pub DataFrameRef: Option<DataFrameRefWrapper>,
+    
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(flatten)]
+    pub DatedVehicleJourneyRef: Option<DatedVehicleJourneyRefWrapper>,
+}
+
+// Wrappers for all fields
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct DataFrameRefWrapper {
+    pub DataFrameRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct DatedVehicleJourneyRefWrapper {
+    pub DatedVehicleJourneyRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct ResponseTimeStampWrapper {
+    pub ResponseTimestamp: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct RequestMessageRefWrapper {
+    pub RequestMessageRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct SubscriberRefWrapper {
+    pub SubscriberRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct SubscriptionRefWrapper {
+    pub SubscriptionRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct OrderWrapper {
+    pub Order: u16,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct StopPointNameWrapper {
+    pub StopPointName: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct VehicleAtStopWrapper {
+    pub VehicleAtStop: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct DestinationDisplayWrapper {
+    pub DestinationDisplay: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+pub struct AimedArrivalTimeWrapper {
+    pub AimedArrivalTime: DateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+pub struct AimedDepartureTimeWrapper {
+    pub AimedDepartureTime: DateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+pub struct ExpectedArrivalTimeWrapper {
+    pub ExpectedArrivalTime: DateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+pub struct ExpectedDepartureTimeWrapper {
+    pub ExpectedDepartureTime: DateTime,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema)]
+pub struct ArrivalStatusWrapper {
+    pub ArrivalStatus: ArrivalStatus,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct LineRefWrapper {
+    pub LineRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct DirectionRefWrapper {
+    pub DirectionRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct JourneyPatternRefWrapper {
+    pub JourneyPatternRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct PublishedLineNameWrapper {
+    pub PublishedLineName: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct VehicleRefWrapper {
+    pub VeichleRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct StopPointRefWrapper {
+    pub StopPointRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct VisitNumberWrapper {
+    pub VisitNumber: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct OperatorRefWrapper {
+    pub OperatorRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct MonitoringRefWrapper {
+    pub MonitoringRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct RecordedAtTimeWrapper {
+    pub RecordedAtTime: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct ItemIdentifierWrapper {
+    pub ItemIdentifier: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct VersionWrapper {
+    pub Version: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct StatusWrapper {
+    pub Status: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct ProducerRefWrapper {
+    pub ProducerRef: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct AddressWrapper {
+    pub Address: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, OpenapiSchema, Default)]
+pub struct ResponseMessageIdentifierWrapper {
+    pub ResponseMessageIdentifier: String,
 }
