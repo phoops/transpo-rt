@@ -105,6 +105,10 @@ pub struct EstimatedCall {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(flatten)]
     pub AimedArrivalTime: Option<AimedArrivalTimeWrapper>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(flatten)]
+    pub ExpectedArrivalTime: Option<ExpectedArrivalTimeWrapper>,
     
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(flatten)]
@@ -113,10 +117,6 @@ pub struct EstimatedCall {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(flatten)]
     pub ExpectedDepartureTime: Option<ExpectedDepartureTimeWrapper>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(flatten)]
-    pub ExpectedArrivalTime: Option<ExpectedArrivalTimeWrapper>,
 }
 
 #[derive(Debug, Serialize, Deserialize, OpenapiSchema)]

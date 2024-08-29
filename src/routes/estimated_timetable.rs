@@ -106,31 +106,29 @@ fn create_estimated_timetable_visit(
         Order: model::OrderWrapper{ Order: connection.sequence as u16},
         StopPointName: model::StopPointNameWrapper{ StopPointName: stop.name.clone()},
         AimedArrivalTime: Some( model::AimedArrivalTimeWrapper{ AimedArrivalTime: siri_lite::DateTime(connection.arr_time)}),
+        ExpectedArrivalTime: updated_connection
+            .and_then(|c| c.arr_time)
+            .map(|time| model::ExpectedArrivalTimeWrapper { ExpectedArrivalTime: siri_lite::DateTime(time) }),
         AimedDepartureTime: Some( model::AimedDepartureTimeWrapper{ AimedDepartureTime: siri_lite::DateTime(connection.dep_time)}),
         ExpectedDepartureTime: updated_connection
             .and_then(|c| c.dep_time)
             .map(|time| model::ExpectedDepartureTimeWrapper { ExpectedDepartureTime: siri_lite::DateTime(time) })
-            .or_else(|| Some(model::ExpectedDepartureTimeWrapper { ExpectedDepartureTime: siri_lite::DateTime(chrono::Utc::now().naive_local()) })),
-        ExpectedArrivalTime: updated_connection
-            .and_then(|c| c.arr_time)
-            .map(|time| model::ExpectedArrivalTimeWrapper { ExpectedArrivalTime: siri_lite::DateTime(time) })
-            .or_else(|| Some(model::ExpectedArrivalTimeWrapper { ExpectedArrivalTime: siri_lite::DateTime(chrono::Utc::now().naive_local()) })),
-    };
+        };
 
     model::EstimatedVehicleJourney {
-            LineRef: model::LineRefWrapper{ LineRef: format!("IT:ITC1:Line:busATS:{}", line_ref.clone())}, //TODO: hardcoded prefix
-            DirectionRef: Some(model::DirectionRefWrapper{ DirectionRef: "inbound".to_string()}), //TODO: find value
-            JourneyPatternRef: None, //TODO: find value
-            PublishedLineName: None, //TODO: find value
-            FramedVehicleJourneyRef: model::FramedVehicleJourneyRef {
-                DataFrameRef: Some(model::DataFrameRefWrapper{ DataFrameRef: "xxx".to_string()}), //TODO: hardcoded value
-                DatedVehicleJourneyRef: Some(model::DatedVehicleJourneyRefWrapper{ DatedVehicleJourneyRef: format!("xxx")}), //TODO: hardcoded prefix
-            },
-            OperatorRef: model::ServiceInfoGroup { 
-                OperatorRef: Some(model::OperatorRefWrapper{ OperatorRef: format!("IT:ITC1:Operator:12345678911:busATS:{}", operator_ref.unwrap_or_default())}) 
-            }, //TODO: hardcoded prefix
-            VehicleRef: None, //TODO: find value
-            EstimatedCalls: call,
+        LineRef: model::LineRefWrapper{ LineRef: format!("IT:ITC1:Line:busATS:{}", line_ref.clone())}, //TODO: hardcoded prefix
+        DirectionRef: Some(model::DirectionRefWrapper{ DirectionRef: "inbound".to_string()}), //TODO: find value
+        JourneyPatternRef: None, //TODO: find value
+        PublishedLineName: None, //TODO: find value
+        FramedVehicleJourneyRef: model::FramedVehicleJourneyRef {
+            DataFrameRef: Some(model::DataFrameRefWrapper{ DataFrameRef: connection.arr_time.date().to_string() }), 
+            DatedVehicleJourneyRef: Some(model::DatedVehicleJourneyRefWrapper{ DatedVehicleJourneyRef: format!("x")}), //TODO: hardcoded values
+        },
+        OperatorRef: model::ServiceInfoGroup { 
+            OperatorRef: Some(model::OperatorRefWrapper{ OperatorRef: format!("IT::Operator:02194050486:{}", operator_ref.unwrap_or_default())}) 
+        }, //TODO: hardcoded prefix
+        VehicleRef: None, //TODO: find value
+        EstimatedCalls: call,
     }
 }
 
@@ -282,8 +280,13 @@ fn estimated_timetable(
 
     let service_delivery_xml = to_string(&service_delivery).unwrap();
     //TODO: FIX THIS replace
-    let service_delivery_xml2 = service_delivery_xml.replace("<EstimatedCalls>", "<EstimatedCalls><EstimatedCall>").replace("</EstimatedCalls>", "</EstimatedCall></EstimatedCalls>");
-    let xml_with_root = format!("<?xml version=\"1.0\" encoding=\"utf-8\"?><Siri xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.siri.org.uk/siri\" xsi:schemaLocation=\"http://www.siri.org.uk/siri ../xsd/siri.xsd\" version=\"2.1\"><ServiceDelivery>{}</ServiceDelivery></Siri>", service_delivery_xml2);
+    let xml_with_root = format!(
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?><Siri xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.siri.org.uk/siri\" xsi:schemaLocation=\"http://www.siri.org.uk/siri ../xsd/siri.xsd\" version=\"2.1\"><ServiceDelivery>{}</ServiceDelivery></Siri>", service_delivery_xml
+        .replace("<EstimatedCalls>", "<EstimatedCalls><EstimatedCall>")
+        .replace("</EstimatedCalls>", "</EstimatedCall></EstimatedCalls>")
+        .replace("</EstimatedCalls>", "</EstimatedCalls></EstimatedVehicleJourney><EstimatedVehicleJourney>")
+        .replace("<EstimatedVehicleJourney></EstimatedVehicleJourney>", "")
+    );
 
     Ok(xml_with_root)
 
