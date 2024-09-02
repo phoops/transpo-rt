@@ -128,7 +128,7 @@ fn register_dataset_routes(
                 .service(
                     web::resource("/siri/2.0/estimated-timetable.json/")
                         .name(&format!("{}/estimated_timetable_query", &d.id))
-                        .route(web::get().to(estimated_timetable_query)),
+                        .route(web::post().to(estimated_timetable_query)),
                 )
                 .service(
                     web::resource("/siri/2.0/general-message.json/")
